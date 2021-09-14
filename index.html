@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+        <!-- Highlight.js -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css">
+
+        <title>Hello, world!</title>
+    </head>
+    <body class="bg-light">
+        <main class="container">
+            <h1 class="text-center">CoderMerlin&trade; Rest Tester</h1>
+
+            <div class="row">
+                <div class="col-xl">
+                    <h2>Request Data</h2>
+                    <div class="form-group">
+                        <label for="request-method">Method</label>
+                        <select id="request-method" class="form-select">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="request-url">Request URL</label>
+                        <input type="text" class="form-control" id="request-url">
+                    </div>
+                    <div class="form-group">
+                        <label for="request-json">Request Data</label>
+                        <textarea id="request-json" class="form-control" rows="5"></textarea>
+                    </div>
+                    <br>
+                    <div class="d-flex flex-align-center">
+                        <button id="make-request" class="btn btn-primary">Make Request</button>
+                        &nbsp;
+                        <div class="spinner-border" role="status" id="request-status-loader" style="display: none;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl">
+                    <h2>Response Data</h2>
+                    <span>
+                        Response Code: <span id="response-code">---</span>
+                    </span>
+                    <pre>
+                        <code id="response-json" class="language-json">
+                        </code>
+                    </pre>
+                </div>
+            </div>
+        </main>
+
+        <!-- jQuery -->
+        <script
+            src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+            crossorigin="anonymous"></script>
+
+        <!-- Option 1: Bootstrap Bundle with Popper -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+
+        <!-- Highlight js-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+        <!-- and it's easy to individually load additional languages -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/json.min.js"></script>
+
+        <script>
+         $(function() {
+             $('#make-request').click(function() {
+                 const url = $('#request-url').val();
+                 const data = $('#request-json').val();
+                 const method = $('#request-method').val();
+
+                 let validation = true;
+
+                 // Validate the URL
+                 try {
+                     new URL(url);
+                     $('#request-url').removeClass('is-invalid').addClass('is-valid');
+                 } catch (_) {
+                     $('#request-url').removeClass('is-valid').addClass('is-invalid');
+                     validation = false;
+                 }
+
+                 // JSON validation
+                 try {
+                     JSON.parse(data);
+
+                     $('#request-json').removeClass('is-invalid').addClass('is-valid');
+                 } catch (_) {
+                     $('#request-json').removeClass('is-valid').addClass('is-invalid');
+                     validation = false;
+                 }
+
+                 if (validation) {
+                     // Show the loader
+                     $('#request-status-loader').show();
+
+                     // Make the request
+                     $.ajax({
+                         url: 'proxy.php',
+                         type: 'GET',
+                         contentType: 'application/json',
+                         timeout: 3000,
+                         data: {
+                             url: url,
+                             method: method,
+                             data: data
+                         }
+                     }).done(function (data) {
+                         try {
+                             data = JSON.parse(data);
+
+                             console.log(data);
+
+                             $('#response-code').html(data.response_code);
+                             $('#response-json').html(data.response_body);
+
+                             // Highlight again
+                             hljs.highlightAll();
+                         } catch (_) {
+                             // Error handling
+                             $('#request-status-loader').hide();
+                             $('#response-code').html('ERROR');
+                             $('#response-json').html();
+                         }
+                     }).fail(function () {
+                         $('#response-code').html('ERROR');
+                         $('#response-json').html();
+                     })
+                     .always(function (xhr) {
+                         $('#request-status-loader').hide();
+                     });
+                 }
+             });
+             // Highlight
+             hljs.highlightAll();
+         });
+        </script>
+    </body>
+</html>

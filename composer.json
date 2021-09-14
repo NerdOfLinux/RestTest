@@ -1,0 +1,12 @@
+{
+    "name": "nerdoflinux/merlin-rest",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Nerdoflinux\\MerlinRest\\": "src/"
+        }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.3"
+    }
+}
