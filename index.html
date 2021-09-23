@@ -11,6 +11,9 @@
         <!-- Highlight.js -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css">
 
+        <!-- JSON Editor -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min.css">
+
         <title>Hello, world!</title>
     </head>
     <body class="bg-light">
@@ -33,10 +36,12 @@
                     <div class="form-group">
                         <label for="request-url">Request URL</label>
                         <input type="text" class="form-control" id="request-url">
+                        <div class="invalid-feedback" id="url-invalid-feedback"></div>
                     </div>
                     <div class="form-group">
-                        <label for="request-json">Request Data</label>
-                        <textarea id="request-json" class="form-control" rows="5"></textarea>
+                        <label for="request-json">Request JSON</label>
+                        <div id="request-json" style="height: 400px;"></div>
+                        <div class="invalid-feedback" id="json-invalid-feedback"></div>
                     </div>
                     <br>
                     <div class="d-flex flex-align-center">
@@ -52,10 +57,7 @@
                     <span>
                         Response Code: <span id="response-code">---</span>
                     </span>
-                    <pre>
-                        <code id="response-json" class="language-json">
-                        </code>
-                    </pre>
+                    <div id="response-json" style="height: 400px;"></div>
                 </div>
             </div>
         </main>
@@ -73,12 +75,21 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
         <!-- and it's easy to individually load additional languages -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/json.min.js"></script>
+        <!-- JSON editor -->
+        <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min.js"></script>
 
         <script>
          $(function() {
+             // Initialize the JSON editor
+             let editor = new JSONEditor($('#request-json')[0], {
+                 mode: 'code'
+             });
+
+             let viewer = new JSONEditor($('#response-json')[0]);
+
              $('#make-request').click(function() {
                  const url = $('#request-url').val();
-                 const data = $('#request-json').val();
+                 const data = JSON.stringify(editor.get());
                  const method = $('#request-method').val();
 
                  let validation = true;
@@ -87,8 +98,10 @@
                  try {
                      new URL(url);
                      $('#request-url').removeClass('is-invalid').addClass('is-valid');
-                 } catch (_) {
+                     $('#url-invalid-feedback').html('');
+                 } catch (e) {
                      $('#request-url').removeClass('is-valid').addClass('is-invalid');
+                     $('#url-invalid-feedback').html('URL is invalid');
                      validation = false;
                  }
 
@@ -97,8 +110,10 @@
                      JSON.parse(data);
 
                      $('#request-json').removeClass('is-invalid').addClass('is-valid');
-                 } catch (_) {
+                     $('#json-invalid-feedback').html('');
+                 } catch (e) {
                      $('#request-json').removeClass('is-valid').addClass('is-invalid');
+                     $('#json-invalid-feedback').html(e);
                      validation = false;
                  }
 
@@ -121,22 +136,19 @@
                          try {
                              data = JSON.parse(data);
 
-                             console.log(data);
-
                              $('#response-code').html(data.response_code);
-                             $('#response-json').html(data.response_body);
-
-                             // Highlight again
-                             hljs.highlightAll();
-                         } catch (_) {
+                             viewer.set(data.response_body);
+                         } catch (e) {
                              // Error handling
                              $('#request-status-loader').hide();
-                             $('#response-code').html('ERROR');
-                             $('#response-json').html();
+                             $('#response-code').html('<strong style="color: red;">ERROR</strong>');
+                             viewer.set('JSON parse error');
+
+                             console.error(e);
                          }
                      }).fail(function () {
-                         $('#response-code').html('ERROR');
-                         $('#response-json').html();
+                         $('#response-code').html('<strong style="color: red;">ERROR</strong>');
+                         viewer.set('Request to server failed');
                      })
                      .always(function (xhr) {
                          $('#request-status-loader').hide();
